@@ -1,52 +1,75 @@
 'use client';
 
-import { useSearchParams } from 'next/navigation';
-import { Suspense } from 'react';
+import { useState, useEffect } from 'react';
 import { AnalysisResult } from '@/types/analysis';
 import { criteria } from '@/lib/criteria';
 import Link from 'next/link';
 
 function ScoreOverviewContent() {
-  const searchParams = useSearchParams();
-  const dataParam = searchParams.get('data');
+  const [result, setResult] = useState<AnalysisResult | null>(null);
+  const [error, setError] = useState<'no-data' | 'invalid' | null>(null);
 
-  if (!dataParam) {
+  useEffect(() => {
+    const stored = sessionStorage.getItem('analysisResult');
+    if (!stored) {
+      setError('no-data');
+      return;
+    }
+    try {
+      setResult(JSON.parse(stored));
+    } catch {
+      setError('invalid');
+    }
+  }, []);
+
+  if (error === 'no-data') {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center">
           <h1 className="font-headline text-3xl font-bold text-on-surface mb-4">
-            No Analysis Data
+            Sem Dados de Análise
           </h1>
           <p className="text-on-surface-variant mb-6">
-            Please analyze a LinkedIn profile first.
+            Analise um perfil LinkedIn primeiro.
           </p>
           <Link
             href="/"
             className="inline-flex items-center gap-2 signature-gradient text-on-primary px-6 py-3 rounded-full font-headline font-bold"
           >
-            Back to Home
+            Voltar ao Início
           </Link>
         </div>
       </div>
     );
   }
 
-  let result: AnalysisResult;
-  try {
-    result = JSON.parse(decodeURIComponent(dataParam));
-  } catch {
+  if (error === 'invalid') {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center">
           <h1 className="font-headline text-3xl font-bold text-on-surface mb-4">
-            Invalid Analysis Data
+            Dados de Análise Inválidos
           </h1>
           <p className="text-on-surface-variant mb-6">
-            The analysis data is corrupted. Please try again.
+            Os dados da análise estão corrompidos. Tente novamente.
           </p>
           <Link href="/" className="inline-flex items-center gap-2 signature-gradient text-on-primary px-6 py-3 rounded-full font-headline font-bold">
-            Back to Home
+            Voltar ao Início
           </Link>
+        </div>
+      </div>
+    );
+  }
+
+  if (!result) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-center">
+          <svg className="animate-spin h-12 w-12 text-primary mx-auto mb-4" viewBox="0 0 24 24">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+          </svg>
+          <p className="text-on-surface-variant">Carregando detalhamento...</p>
         </div>
       </div>
     );
@@ -61,7 +84,7 @@ function ScoreOverviewContent() {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="bg-surface border-b border-outline-variant sticky top-0 z-50">
+      <header className="bg-white border-b border-outline-variant sticky top-0 z-50">
         <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2">
             <span className="text-2xl font-extrabold text-primary tracking-tighter font-headline">
@@ -70,10 +93,10 @@ function ScoreOverviewContent() {
           </Link>
           <div className="flex items-center gap-3">
             <Link
-              href={`/analyze?data=${dataParam}`}
+              href="/analyze"
               className="px-4 py-2 rounded-full bg-surface-container-low hover:bg-surface-container-high transition-colors text-on-surface font-medium text-sm"
             >
-              Back to Summary
+              Voltar ao Resumo
             </Link>
           </div>
         </div>
@@ -97,10 +120,10 @@ function ScoreOverviewContent() {
             )}
             <div>
               <h1 className="font-headline text-4xl md:text-5xl font-extrabold text-primary">
-                Detailed Score Breakdown
+                Detalhamento de Pontuação
               </h1>
               <p className="text-on-surface-variant text-lg">
-                {result.profileData.name || 'Profile'} — Comprehensive analysis across all 10 evaluation categories
+                {result.profileData.name || 'Perfil'} — Análise completa em todas as 10 categorias de avaliação
               </p>
             </div>
           </div>
@@ -109,7 +132,7 @@ function ScoreOverviewContent() {
         <div className="bg-surface-container-low rounded-2xl p-6 mb-8">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-on-surface-variant uppercase tracking-wider mb-1">Overall Score</p>
+              <p className="text-sm text-on-surface-variant uppercase tracking-wider mb-1">Pontuação Geral</p>
               <p className="text-4xl font-extrabold font-headline text-primary">{result.totalScore}/100</p>
             </div>
             <div className={`px-4 py-2 rounded-full font-bold ${getScoreColor(result.totalScore).bg} ${getScoreColor(result.totalScore).text}`}>
@@ -148,7 +171,7 @@ function ScoreOverviewContent() {
                         / {criterion.maxScore} pts
                       </div>
                       <div className={`text-xs font-medium ${colors.text}`}>
-                        Weight: {criterion.weight}%
+                        Peso: {criterion.weight}%
                       </div>
                     </div>
                   </div>
@@ -163,11 +186,11 @@ function ScoreOverviewContent() {
 
                 <div className="p-6">
                   <p className="text-sm text-on-surface-variant mb-4 italic">
-                    {categoryScore?.feedback || 'No feedback available for this category.'}
+                    {categoryScore?.feedback || 'Nenhum feedback disponível para esta categoria.'}
                   </p>
                   
                   <h3 className="font-headline font-bold text-sm uppercase tracking-wider text-outline mb-4">
-                    Sub-Criteria Evaluation
+                    Avaliação de Subcritérios
                   </h3>
                   
                   <div className="grid gap-3">
@@ -219,7 +242,7 @@ function ScoreOverviewContent() {
             <svg className="w-6 h-6 text-secondary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
             </svg>
-            Priority Recommendations
+            Recomendações Prioritárias
           </h3>
           <ol className="space-y-4">
             {result.topRecommendations.map((rec, index) => (
@@ -246,14 +269,14 @@ function ScoreOverviewContent() {
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
             </svg>
-            Analyze Another Profile
+            Analisar Outro Perfil
           </Link>
         </div>
       </main>
 
-      <footer className="bg-surface border-t border-outline-variant py-8 mt-12">
+      <footer className="bg-primary-container border-t border-outline-variant py-8 mt-12">
         <div className="max-w-5xl mx-auto px-6 text-center text-sm text-on-surface-variant">
-          <p>Insight Architect — Professional LinkedIn Profile Evaluator</p>
+          <p>Insight Architect — Avaliador Profissional de Perfil LinkedIn</p>
         </div>
       </footer>
     </div>
@@ -261,19 +284,5 @@ function ScoreOverviewContent() {
 }
 
 export default function ScoreOverviewPage() {
-  return (
-    <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="text-center">
-          <svg className="animate-spin h-12 w-12 text-primary mx-auto mb-4" viewBox="0 0 24 24">
-            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-          </svg>
-          <p className="text-on-surface-variant">Loading score breakdown...</p>
-        </div>
-      </div>
-    }>
-      <ScoreOverviewContent />
-    </Suspense>
-  );
+  return <ScoreOverviewContent />;
 }

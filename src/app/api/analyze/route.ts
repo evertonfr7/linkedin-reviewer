@@ -54,7 +54,7 @@ export async function POST(request: NextRequest) {
 
   try {
     const body: AnalyzeRequest = await request.json();
-    const { url, profileText, parsedProfile, profilePhoto } = body;
+    const { url, profileText, parsedProfile, profilePhoto, photoDescription, manualInfo } = body;
 
     if (!url && !profileText && !parsedProfile) {
       return NextResponse.json<AnalyzeResponse>(
@@ -107,9 +107,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const analysisResult = await analyzeProfile(profileData);
+    const analysisResult = await analyzeProfile(profileData, manualInfo, photoDescription);
 
-    analysisResult.profilePhoto = profilePhoto || null;
+    if (profilePhoto === 'analysed') {
+      analysisResult.profilePhoto = 'analysed';
+    } else {
+      analysisResult.profilePhoto = profilePhoto || null;
+    }
 
     return NextResponse.json<AnalyzeResponse>(
       {

@@ -4,10 +4,10 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import UrlInput from '@/components/UrlInput';
 import ManualInput from '@/components/ManualInput';
-import PdfUpload from '@/components/PdfUpload';
+import MhtmlUpload from '@/components/MhtmlUpload';
 import { AnalyzeResponse, ParsePreview } from '@/types/analysis';
 
-type InputMode = 'url' | 'manual' | 'pdf';
+type InputMode = 'url' | 'manual' | 'mhtml';
 
 export default function Home() {
   const router = useRouter();
@@ -39,8 +39,8 @@ export default function Home() {
         return;
       }
 
-      const encodedData = encodeURIComponent(JSON.stringify(data.result));
-      router.push(`/analyze?data=${encodedData}`);
+      sessionStorage.setItem('analysisResult', JSON.stringify(data.result));
+      router.push('/analyze');
     } catch (err) {
       setError('Erro ao conectar com o servidor. Tente novamente.');
       setIsLoading(false);
@@ -52,14 +52,19 @@ export default function Home() {
     setError(undefined);
 
     try {
-      const { parsedProfile, profilePhoto } = parsedData as { parsedProfile: ParsePreview; profilePhoto?: string };
-      
+      const { parsedProfile, profilePhoto, photoDescription, manualInfo } = parsedData as {
+        parsedProfile: ParsePreview;
+        profilePhoto?: string;
+        photoDescription?: string;
+        manualInfo?: string;
+      };
+
       const response = await fetch('/api/analyze', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ parsedProfile, profilePhoto }),
+        body: JSON.stringify({ parsedProfile, profilePhoto, photoDescription, manualInfo }),
       });
 
       const data: AnalyzeResponse = await response.json();
@@ -70,8 +75,8 @@ export default function Home() {
         return;
       }
 
-      const encodedData = encodeURIComponent(JSON.stringify(data.result));
-      router.push(`/analyze?data=${encodedData}`);
+      sessionStorage.setItem('analysisResult', JSON.stringify(data.result));
+      router.push('/analyze');
     } catch (err) {
       setError('Erro ao conectar com o servidor. Tente novamente.');
       setIsLoading(false);
@@ -81,17 +86,17 @@ export default function Home() {
   if (inputMode !== 'url') {
     return (
       <div className="min-h-screen bg-background">
-        <header className="bg-surface border-b border-outline-variant">
+        <header className="bg-white border-b border-outline-variant">
           <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
             <span className="text-2xl font-extrabold text-primary tracking-tighter font-headline">
               Insight Architect
             </span>
             <nav className="hidden md:flex gap-6 items-center">
               <a className="font-headline font-bold tracking-tight text-primary border-b-2 border-primary pb-1" href="#">
-                Dashboard
+                Painel
               </a>
               <a className="font-headline font-bold tracking-tight text-on-surface-variant hover:text-primary transition-colors" href="#">
-                Analyses
+                Análises
               </a>
               <a className="font-headline font-bold tracking-tight text-on-surface-variant hover:text-primary transition-colors" href="#">
                 Benchmarks
@@ -115,12 +120,12 @@ export default function Home() {
         <main className="max-w-7xl mx-auto px-6 py-20">
           <div className="text-center mb-8">
             <h1 className="font-headline text-4xl md:text-5xl font-extrabold text-primary mb-4">
-              {inputMode === 'manual' ? 'Self-Assessment Mode' : 'PDF Upload Mode'}
+              {inputMode === 'manual' ? 'Modo Autoavaliação' : 'Modo Upload MHTML'}
             </h1>
             <p className="text-on-surface-variant text-lg max-w-2xl mx-auto">
-              {inputMode === 'manual' 
-                ? 'Copy and paste your LinkedIn profile information for analysis when automatic scraping is blocked.'
-                : 'Upload exported HTML files from your LinkedIn profile for detailed analysis.'}
+              {inputMode === 'manual'
+                ? 'Copie e cole as informações do seu perfil LinkedIn para análise quando a extração automática estiver bloqueada.'
+                : 'Faça upload de arquivos MHTML exportados do seu perfil LinkedIn para análise detalhada.'}
             </p>
           </div>
 
@@ -135,8 +140,8 @@ export default function Home() {
             />
           )}
 
-          {inputMode === 'pdf' && (
-            <PdfUpload
+          {inputMode === 'mhtml' && (
+            <MhtmlUpload
               onSubmit={handleManualSubmit}
               onCancel={() => {
                 setInputMode('url');
@@ -147,13 +152,13 @@ export default function Home() {
           )}
         </main>
 
-        <footer className="bg-surface border-t border-outline-variant py-6">
+        <footer className="bg-primary-container border-t border-outline-variant py-6">
           <div className="max-w-7xl mx-auto px-6 flex justify-between items-center">
             <span className="font-headline font-bold text-primary">Insight Architect</span>
             <div className="flex gap-6 text-xs uppercase tracking-widest text-on-surface-variant">
-              <a href="#" className="hover:text-primary transition-colors">Privacy Policy</a>
-              <a href="#" className="hover:text-primary transition-colors">Terms of Service</a>
-              <a href="#" className="hover:text-primary transition-colors">Methodology</a>
+              <a href="#" className="hover:text-primary transition-colors">Política de Privacidade</a>
+              <a href="#" className="hover:text-primary transition-colors">Termos de Uso</a>
+              <a href="#" className="hover:text-primary transition-colors">Metodologia</a>
             </div>
           </div>
         </footer>
@@ -163,17 +168,17 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="bg-surface border-b border-outline-variant sticky top-0 z-50">
+      <header className="bg-white border-b border-outline-variant sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
           <span className="text-2xl font-extrabold text-primary tracking-tighter font-headline">
             Insight Architect
           </span>
           <nav className="hidden md:flex gap-6 items-center">
             <a className="font-headline font-bold tracking-tight text-primary border-b-2 border-primary pb-1" href="#">
-              Dashboard
+              Painel
             </a>
             <a className="font-headline font-bold tracking-tight text-on-surface-variant hover:text-primary transition-colors" href="#">
-              Analyses
+              Análises
             </a>
             <a className="font-headline font-bold tracking-tight text-on-surface-variant hover:text-primary transition-colors" href="#">
               Benchmarks
@@ -199,13 +204,13 @@ export default function Home() {
           <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center gap-16">
             <div className="flex-1 z-10 text-center md:text-left">
               <span className="inline-block px-4 py-1.5 mb-6 text-sm font-semibold tracking-wider text-secondary bg-secondary-container rounded-full uppercase font-label">
-                Executive Precision
+                Precisão Executiva
               </span>
               <h1 className="font-headline text-5xl md:text-7xl font-extrabold text-primary leading-[1.1] tracking-tighter mb-8">
-                Architect Your <br /> Professional <span className="text-secondary">Narrative.</span>
+                Arquitete Sua <br /> Narrativa <span className="text-secondary">Profissional.</span>
               </h1>
               <p className="text-on-surface-variant text-lg md:text-xl max-w-xl mb-12 leading-relaxed">
-                Beyond keywords. Beyond clicks. We deploy institutional-grade analysis to audit your LinkedIn presence against the benchmarks of the world&apos;s elite leadership.
+                Além de palavras-chave. Além de cliques. Utilizamos análise de nível institucional para auditar sua presença no LinkedIn contra os padrões da elite mundial.
               </p>
               
               <UrlInput
@@ -213,7 +218,7 @@ export default function Home() {
                 isLoading={isLoading}
                 error={error}
                 onManualInput={() => setInputMode('manual')}
-                onPdfUpload={() => setInputMode('pdf')}
+                onMhtmlUpload={() => setInputMode('mhtml')}
               />
 
               <div className="mt-8 flex flex-wrap justify-center md:justify-start gap-4 items-center">
@@ -222,7 +227,7 @@ export default function Home() {
                     +2k
                   </div>
                 </div>
-                <span className="text-sm text-on-surface-variant font-medium">Profiles analyzed this month</span>
+                <span className="text-sm text-on-surface-variant font-medium">Perfis analisados este mês</span>
               </div>
             </div>
 
@@ -231,11 +236,11 @@ export default function Home() {
               <div className="absolute -bottom-12 -left-12 w-64 h-64 bg-primary-fixed-dim rounded-full blur-3xl opacity-20"></div>
               
               <div className="relative z-10 bg-surface-container-lowest p-6 rounded-xl shadow-2xl overflow-hidden transform rotate-2 hover:rotate-0 transition-transform duration-500">
-                <div className="aspect-[4/5] rounded-lg overflow-hidden relative bg-gradient-to-br from-primary/20 to-secondary/20 flex items-center justify-center">
+                <div className="aspect-[4/5] rounded-lg overflow-hidden relative flex items-center justify-center bg-cover bg-center" style={{ backgroundImage: 'url(https://i.ibb.co/LDW9hXLv/Screenshot-from-2026-03-27-18-52-49.png)' }}>
                   <div className="glass-effect p-6 rounded-xl border border-white/20 w-full max-w-xs">
                     <div className="flex justify-between items-end mb-4">
                       <div>
-                        <p className="text-xs uppercase tracking-widest text-primary font-bold mb-1">Current Standing</p>
+                        <p className="text-xs uppercase tracking-widest text-primary font-bold mb-1">Posição Atual</p>
                         <h3 className="font-headline text-3xl font-extrabold text-on-surface">Elite 89</h3>
                       </div>
                       <div className="w-12 h-12 rounded-full border-4 border-secondary flex items-center justify-center">
@@ -256,8 +261,8 @@ export default function Home() {
                   </svg>
                 </div>
                 <div>
-                  <p className="text-[10px] uppercase font-bold tracking-tighter text-outline">Audit Status</p>
-                  <p className="text-sm font-headline font-extrabold text-on-surface">Verified Excellence</p>
+                  <p className="text-[10px] uppercase font-bold tracking-tighter text-outline">Status da Auditoria</p>
+                  <p className="text-sm font-headline font-extrabold text-on-surface">Excelência Verificada</p>
                 </div>
               </div>
             </div>
@@ -268,10 +273,10 @@ export default function Home() {
           <div className="max-w-7xl mx-auto">
             <div className="text-center mb-20">
               <h2 className="font-headline text-4xl md:text-5xl font-extrabold text-on-surface mb-6 tracking-tight">
-                The 10-Category Audit
+                Auditoria em 10 Categorias
               </h2>
               <p className="text-on-surface-variant max-w-2xl mx-auto text-lg">
-                Our proprietary engine evaluates your profile across ten clinical dimensions, producing a definitive score out of 100.
+                Nosso motor proprietário avalia seu perfil em dez dimensões clínicas, produzindo uma pontuação definitiva de 0 a 100.
               </p>
             </div>
 
@@ -283,13 +288,13 @@ export default function Home() {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
                     </svg>
                   </div>
-                  <h3 className="font-headline text-2xl font-bold mb-4">Strategic Positioning</h3>
+                  <h3 className="font-headline text-2xl font-bold mb-4">Posicionamento Estratégico</h3>
                   <p className="text-on-surface-variant leading-relaxed">
-                    How your profile communicates value to decision-makers. We measure narrative consistency and executive presence.
+                    Como seu perfil comunica valor para tomadores de decisão. Medimos consistência narrativa e presença executiva.
                   </p>
                 </div>
                 <div className="mt-8 flex items-center justify-between">
-                  <span className="text-primary font-bold text-sm tracking-widest uppercase">Weight: 20%</span>
+                  <span className="text-primary font-bold text-sm tracking-widest uppercase">Peso: 20%</span>
                   <svg className="w-6 h-6 text-outline group-hover:text-primary transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
                   </svg>
@@ -303,13 +308,13 @@ export default function Home() {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                     </svg>
                   </div>
-                  <h3 className="font-headline text-2xl font-bold mb-4">Network Velocity</h3>
+                  <h3 className="font-headline text-2xl font-bold mb-4">Velocidade da Rede</h3>
                   <p className="text-on-surface-variant leading-relaxed">
-                    Analyzing the quality and growth patterns of your professional circle relative to your industry benchmarks.
+                    Analisando a qualidade e padrões de crescimento do seu círculo profissional em relação aos benchmarks da sua indústria.
                   </p>
                 </div>
                 <div className="mt-8 flex items-center justify-between">
-                  <span className="text-secondary font-bold text-sm tracking-widest uppercase">Weight: 15%</span>
+                  <span className="text-secondary font-bold text-sm tracking-widest uppercase">Peso: 15%</span>
                   <svg className="w-6 h-6 text-outline group-hover:text-secondary transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
                   </svg>
@@ -322,8 +327,8 @@ export default function Home() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                   </svg>
                 </div>
-                <h4 className="font-headline font-bold text-lg mb-2">Copy Density</h4>
-                <p className="text-sm text-on-surface-variant">Readability and impact of your headline and summary.</p>
+                <h4 className="font-headline font-bold text-lg mb-2">Densidade do Texto</h4>
+                <p className="text-sm text-on-surface-variant">Legibilidade e impacto do seu título e resumo.</p>
               </div>
 
               <div className="lg:col-span-2 bg-surface p-6 rounded-xl border border-outline-variant/10">
@@ -332,8 +337,8 @@ export default function Home() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
                   </svg>
                 </div>
-                <h4 className="font-headline font-bold text-lg mb-2">Social Proof</h4>
-                <p className="text-sm text-on-surface-variant">Validation of skills and institutional credibility.</p>
+                <h4 className="font-headline font-bold text-lg mb-2">Prova Social</h4>
+                <p className="text-sm text-on-surface-variant">Validação de competências e credibilidade institucional.</p>
               </div>
 
               <div className="lg:col-span-2 bg-surface p-6 rounded-xl border border-outline-variant/10">
@@ -343,8 +348,8 @@ export default function Home() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                   </svg>
                 </div>
-                <h4 className="font-headline font-bold text-lg mb-2">Keyword Logic</h4>
-                <p className="text-sm text-on-surface-variant">Algorithmic discoverability for targeted executive roles.</p>
+                <h4 className="font-headline font-bold text-lg mb-2">Lógica de Palavras-chave</h4>
+                <p className="text-sm text-on-surface-variant">Descobribilidade algorítmica para cargos executivos específicos.</p>
               </div>
             </div>
           </div>
@@ -354,19 +359,19 @@ export default function Home() {
           <div className="flex flex-col md:flex-row gap-12 items-center">
             <div className="w-full md:w-1/2">
               <h2 className="font-headline text-3xl md:text-4xl font-extrabold text-primary mb-6 tracking-tight">
-                Beyond &quot;Optimization&quot;
+                Além da &quot;Otimização&quot;
               </h2>
               <div className="space-y-6">
                 <div className="p-6 rounded-xl bg-surface-container-low border-l-4 border-secondary transition-all">
-                  <h4 className="font-headline font-bold text-on-surface mb-2">The Insight Architect Protocol</h4>
+                  <h4 className="font-headline font-bold text-on-surface mb-2">O Protocolo Insight Architect</h4>
                   <p className="text-on-surface-variant">
-                    We don&apos;t just fix your profile; we architect your career narrative. Every suggestion is backed by competitive data from the top 1% of your field.
+                    Não apenas corrigimos seu perfil; arquitetamos sua narrativa de carreira. Cada sugestão é respaldada por dados competitivos do top 1% da sua área.
                   </p>
                 </div>
                 <div className="p-6 rounded-xl bg-surface hover:bg-surface-container-low transition-all group">
-                  <h4 className="font-headline font-bold text-on-surface mb-2">Actionable Intelligence</h4>
+                  <h4 className="font-headline font-bold text-on-surface mb-2">Inteligência Acionável</h4>
                   <p className="text-on-surface-variant">
-                    Get step-by-step guidance on changing your profile from a resume to a reputation engine.
+                    Receba orientação passo a passo para transformar seu perfil de um currículo em um motor de reputação.
                   </p>
                 </div>
               </div>
@@ -384,26 +389,26 @@ export default function Home() {
                     <svg className="w-6 h-6 text-secondary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
-                    <span className="font-bold text-on-surface">Data-Driven Precision</span>
+                    <span className="font-bold text-on-surface">Precisão Baseada em Dados</span>
                   </div>
                   <div className="flex items-center gap-3 mb-2">
                     <svg className="w-6 h-6 text-secondary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
-                    <span className="font-bold text-on-surface">Elite Benchmark Comparison</span>
+                    <span className="font-bold text-on-surface">Comparação com Benchmarks de Elite</span>
                   </div>
                   <div className="flex items-center gap-3">
                     <svg className="w-6 h-6 text-secondary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
-                    <span className="font-bold text-on-surface">Immediate Transformation ROI</span>
+                    <span className="font-bold text-on-surface">ROI de Transformação Imediata</span>
                   </div>
                 </div>
                 <button 
                   onClick={() => setInputMode('manual')}
                   className="bg-primary text-on-primary px-8 py-4 rounded-full font-headline font-bold hover:bg-primary-container transition-all flex items-center gap-3"
                 >
-                  Start Free Evaluation
+                  Iniciar Avaliação Gratuita
                   <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
                   </svg>
@@ -414,13 +419,13 @@ export default function Home() {
         </section>
       </main>
 
-      <footer className="bg-surface border-t border-outline-variant py-8">
+      <footer className="bg-primary-container border-t border-outline-variant py-8">
         <div className="max-w-7xl mx-auto px-6 flex justify-between items-center">
           <span className="font-headline font-bold text-primary">Insight Architect</span>
           <div className="flex gap-6 text-xs uppercase tracking-widest text-on-surface-variant">
-            <a href="#" className="hover:text-primary transition-colors">Privacy Policy</a>
-            <a href="#" className="hover:text-primary transition-colors">Terms of Service</a>
-            <a href="#" className="hover:text-primary transition-colors">Methodology</a>
+            <a href="#" className="hover:text-primary transition-colors">Política de Privacidade</a>
+            <a href="#" className="hover:text-primary transition-colors">Termos de Uso</a>
+            <a href="#" className="hover:text-primary transition-colors">Metodologia</a>
           </div>
         </div>
       </footer>

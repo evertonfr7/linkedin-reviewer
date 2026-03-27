@@ -173,6 +173,8 @@ export function parseLinkedInText(text: string): ParsePreview {
     volunteering: null,
     projects: [],
     warnings: [],
+    recommendationsReceived: 0,
+    recommendationsGiven: 0,
     stats: {
       nameFound: false,
       headlineFound: false,
@@ -180,7 +182,7 @@ export function parseLinkedInText(text: string): ParsePreview {
       experiencesCount: 0,
       educationCount: 0,
       skillsCount: 0,
-      certificationsCount: 0,
+      recommendationsCount: 0,
     },
   };
   
@@ -408,7 +410,7 @@ export function parseLinkedInText(text: string): ParsePreview {
   result.stats.experiencesCount = result.experiences.length;
   result.stats.educationCount = result.education.length;
   result.stats.skillsCount = result.skills.length;
-  result.stats.certificationsCount = result.certifications.length;
+  result.stats.recommendationsCount = 0;
   
   if (!result.stats.nameFound) {
     warnings.push('Nome não encontrado. Adicione seu nome no início do texto.');
@@ -437,7 +439,7 @@ export function parseLinkedInText(text: string): ParsePreview {
   } else if (result.stats.skillsCount < 5) {
     warnings.push('Poucas skills listadas (< 5). LinkedIn permite até 50 competências.');
   }
-  if (result.stats.certificationsCount === 0) {
+  if (result.certifications.length === 0) {
     warnings.push('Nenhuma certificação encontrada.');
   }
   
@@ -446,13 +448,19 @@ export function parseLinkedInText(text: string): ParsePreview {
   return result;
 }
 
-export function parsePreviewToProfileData(preview: ParsePreview): ProfileData {
+export interface VisionMetadata {
+  hasProfilePhoto?: boolean;
+  hasBannerImage?: boolean;
+  recommendationsCount?: number;
+}
+
+export function parsePreviewToProfileData(preview: ParsePreview, visionMeta?: VisionMetadata): ProfileData {
   return {
     url: '',
     name: preview.name,
     headline: preview.headline,
-    photoUrl: null,
-    bannerUrl: null,
+    photoUrl: visionMeta?.hasProfilePhoto ? 'detected' : null,
+    bannerUrl: visionMeta?.hasBannerImage ? 'detected' : null,
     about: preview.about,
     experiences: preview.experiences.map(e => ({
       ...e,
@@ -464,7 +472,7 @@ export function parsePreviewToProfileData(preview: ParsePreview): ProfileData {
     })),
     skills: preview.skills,
     endorsementsCount: 0,
-    recommendationsReceived: 0,
+    recommendationsReceived: visionMeta?.recommendationsCount ?? 0,
     recommendationsGiven: 0,
     certifications: preview.certifications.map(c => ({
       name: c.name,

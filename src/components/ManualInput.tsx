@@ -314,7 +314,7 @@ AWS Solutions Architect - Amazon - 2022`}
 
               <div className="p-3 bg-surface rounded-xl">
                 <p className="text-xs uppercase tracking-wider text-outline font-medium mb-1">
-                  Certificações ({preview.stats.certificationsCount})
+                  Certificações ({preview.certifications.length})
                 </p>
                 {preview.certifications.length > 0 ? (
                   <ul className="space-y-1">

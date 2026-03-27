@@ -1,7 +1,6 @@
 'use client';
 
-import { useSearchParams } from 'next/navigation';
-import { Suspense } from 'react';
+import { useState, useEffect } from 'react';
 import ScoreGauge from '@/components/ScoreGauge';
 import CategoryCard from '@/components/CategoryCard';
 import RecommendationsList from '@/components/RecommendationsList';
@@ -10,18 +9,31 @@ import { AnalysisResult } from '@/types/analysis';
 import Link from 'next/link';
 
 function ResultsContent() {
-  const searchParams = useSearchParams();
-  const dataParam = searchParams.get('data');
+  const [result, setResult] = useState<AnalysisResult | null>(null);
+  const [error, setError] = useState<'no-data' | 'invalid' | null>(null);
 
-  if (!dataParam) {
+  useEffect(() => {
+    const stored = sessionStorage.getItem('analysisResult');
+    if (!stored) {
+      setError('no-data');
+      return;
+    }
+    try {
+      setResult(JSON.parse(stored));
+    } catch {
+      setError('invalid');
+    }
+  }, []);
+
+  if (error === 'no-data') {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <h1 className="font-headline text-3xl font-bold text-on-surface mb-4">
-            No Analysis Data
+            Sem Dados de Análise
           </h1>
           <p className="text-on-surface-variant mb-6">
-            Please analyze a LinkedIn profile first.
+            Analise um perfil LinkedIn primeiro.
           </p>
           <Link
             href="/"
@@ -30,32 +42,43 @@ function ResultsContent() {
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
             </svg>
-            Back to Home
+            Voltar ao Início
           </Link>
         </div>
       </div>
     );
   }
 
-  let result: AnalysisResult;
-  try {
-    result = JSON.parse(decodeURIComponent(dataParam));
-  } catch {
+  if (error === 'invalid') {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <h1 className="font-headline text-3xl font-bold text-on-surface mb-4">
-            Invalid Analysis Data
+            Dados de Análise Inválidos
           </h1>
           <p className="text-on-surface-variant mb-6">
-            The analysis data is corrupted. Please try again.
+            Os dados da análise estão corrompidos. Tente novamente.
           </p>
           <Link
             href="/"
             className="inline-flex items-center gap-2 signature-gradient text-on-primary px-6 py-3 rounded-full font-headline font-bold"
           >
-            Back to Home
+            Voltar ao Início
           </Link>
+        </div>
+      </div>
+    );
+  }
+
+  if (!result) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-center">
+          <svg className="animate-spin h-12 w-12 text-primary mx-auto mb-4" viewBox="0 0 24 24">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+          </svg>
+          <p className="text-on-surface-variant">Carregando análise...</p>
         </div>
       </div>
     );
@@ -63,7 +86,7 @@ function ResultsContent() {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="bg-surface border-b border-outline-variant sticky top-0 z-50">
+      <header className="bg-white border-b border-outline-variant sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2">
             <span className="text-2xl font-extrabold text-primary tracking-tighter font-headline">
@@ -77,7 +100,7 @@ function ResultsContent() {
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
             </svg>
-            Analyze Another Profile
+            Analisar Outro Perfil
           </Link>
         </div>
       </header>
@@ -85,12 +108,12 @@ function ResultsContent() {
       <main className="max-w-7xl mx-auto px-6 py-12">
         <div className="mb-8">
           <h1 className="font-headline text-4xl md:text-5xl font-extrabold text-primary mb-4">
-            Your Profile Analysis
+            Análise do Seu Perfil
           </h1>
           <p className="text-on-surface-variant text-lg">
-            Analyzed on {new Date(result.analyzedAt).toLocaleDateString('en-US', { 
-              year: 'numeric', 
-              month: 'long', 
+            Analisado em {new Date(result.analyzedAt).toLocaleDateString('pt-BR', {
+              year: 'numeric',
+              month: 'long',
               day: 'numeric',
               hour: '2-digit',
               minute: '2-digit'
@@ -113,16 +136,16 @@ function ResultsContent() {
         <section className="mb-12">
           <div className="flex items-center justify-between mb-6">
             <h2 className="font-headline text-3xl font-bold text-on-surface">
-              10-Category Breakdown
+              Detalhamento em 10 Categorias
             </h2>
             <Link
-              href={`/score-overview?data=${dataParam}`}
+              href="/score-overview"
               className="flex items-center gap-2 px-4 py-2 rounded-full bg-surface-container-low hover:bg-surface-container-high transition-colors text-on-surface font-medium text-sm"
             >
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
               </svg>
-              View Detailed Breakdown
+              Ver Detalhamento Completo
             </Link>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -144,14 +167,14 @@ function ResultsContent() {
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
             </svg>
-            Analyze Another Profile
+            Analisar Outro Perfil
           </Link>
         </div>
       </main>
 
-      <footer className="bg-surface border-t border-outline-variant py-8">
+      <footer className="bg-primary-container border-t border-outline-variant py-8">
         <div className="max-w-7xl mx-auto px-6 text-center text-sm text-on-surface-variant">
-          <p>Insight Architect — Professional LinkedIn Profile Evaluator</p>
+          <p>Insight Architect — Avaliador Profissional de Perfil LinkedIn</p>
         </div>
       </footer>
     </div>
@@ -159,19 +182,5 @@ function ResultsContent() {
 }
 
 export default function AnalyzePage() {
-  return (
-    <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="text-center">
-          <svg className="animate-spin h-12 w-12 text-primary mx-auto mb-4" viewBox="0 0 24 24">
-            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-          </svg>
-          <p className="text-on-surface-variant">Loading analysis...</p>
-        </div>
-      </div>
-    }>
-      <ResultsContent />
-    </Suspense>
-  );
+  return <ResultsContent />;
 }

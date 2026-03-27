@@ -23,10 +23,10 @@ export default function RecommendationsList({ recommendations }: Recommendations
         </div>
         <div>
           <h3 className="font-headline font-bold text-xl text-on-surface">
-            Prioritized Actions
+            Ações Prioritárias
           </h3>
           <p className="text-sm text-on-surface-variant">
-            Focus on these improvements for maximum impact
+            Foque nessas melhorias para máximo impacto
           </p>
         </div>
       </div>
@@ -54,7 +54,7 @@ export default function RecommendationsList({ recommendations }: Recommendations
           <svg className="w-4 h-4 text-secondary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
-          <span>Implement these changes in order for the best results</span>
+          <span>Implemente essas mudanças na ordem indicada para melhores resultados</span>
         </div>
       </div>
     </div>

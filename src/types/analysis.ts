@@ -89,6 +89,8 @@ export interface AnalyzeRequest {
   profileText?: string;
   parsedProfile?: ProfileData;
   profilePhoto?: string;
+  photoDescription?: string;
+  manualInfo?: string;
 }
 
 export interface AnalyzeResponse {
@@ -130,6 +132,8 @@ export interface ParsePreview {
   volunteering: string | null;
   projects: string[];
   warnings: string[];
+  recommendationsReceived: number;
+  recommendationsGiven: number;
   stats: {
     nameFound: boolean;
     headlineFound: boolean;
@@ -137,7 +141,7 @@ export interface ParsePreview {
     experiencesCount: number;
     educationCount: number;
     skillsCount: number;
-    certificationsCount: number;
+    recommendationsCount: number;
   };
 }
 

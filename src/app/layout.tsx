@@ -16,8 +16,8 @@ const manrope = Manrope({
 });
 
 export const metadata: Metadata = {
-  title: "Insight Architect | LinkedIn Profile Evaluator",
-  description: "Executive-grade LinkedIn profile analysis. Get actionable insights to improve your professional presence.",
+  title: "Insight Architect | Avaliador de Perfil LinkedIn",
+  description: "Análise de perfil LinkedIn com precisão executiva. Obtenha insights acionáveis para melhorar sua presença profissional.",
 };
 
 export default function RootLayout({
@@ -26,7 +26,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${inter.variable} ${manrope.variable}`}>
+    <html lang="pt-BR" className={`${inter.variable} ${manrope.variable}`}>
       <body className="min-h-full flex flex-col antialiased">{children}</body>
     </html>
   );

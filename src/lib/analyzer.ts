@@ -1,15 +1,6 @@
-import OpenAI from 'openai';
 import { ProfileData, AnalysisResult, CategoryScore } from '@/types/analysis';
 import { criteria, getGradeFromScore } from './criteria';
-
-const openai = new OpenAI({
-  baseURL: 'https://openrouter.ai/api/v1',
-  apiKey: process.env.OPENROUTER_API_KEY,
-  defaultHeaders: {
-    'HTTP-Referer': process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000',
-    'X-Title': 'Insight Architect - LinkedIn Profile Evaluator',
-  },
-});
+import { openai } from './openaiClient';
 
 const MAX_RETRIES = 3;
 const BASE_DELAY_MS = 1000;
@@ -66,7 +57,7 @@ interface LLMAnalysisResponse {
   topRecommendations: string[];
 }
 
-function buildAnalysisPrompt(profileData: ProfileData): string {
+function buildAnalysisPrompt(profileData: ProfileData, manualInfo?: string, photoDescription?: string): string {
   const categoriesContext = criteria.map(c => `
 ${c.nameEn} (${c.weight}%):
 - Description: ${c.description}
@@ -87,8 +78,8 @@ Profile Data:
 - Headline: ${profileData.headline || 'N/A'}
 - Location: ${profileData.location || 'N/A'}
 - About: ${profileData.about || 'Not provided'}
-- Has Photo: ${profileData.photoUrl ? 'Yes' : 'No'}
-- Has Banner: ${profileData.bannerUrl ? 'Yes' : 'No'}
+- Has Photo: ${profileData.photoUrl || photoDescription ? 'Yes (photo was analyzed by AI — see PROFILE PHOTO ANALYSIS section below)' : 'No'}
+- Has Banner: ${profileData.bannerUrl ? 'Yes' : 'No (do NOT penalize for banner — we only evaluate the profile photo)'}
 - Custom URL: ${profileData.customUrl ? 'Yes' : 'No'}
 
 Experiences (${experiences.length}):
@@ -110,6 +101,7 @@ Featured Items: ${featured.length}
 Languages: ${languages.length > 0 ? languages.map(l => `${l.name} (${l.proficiency})`).join(', ') : 'Not specified'}
 Volunteering: ${profileData.volunteering || 'Not specified'}
 Projects: ${projects.length > 0 ? projects.join(', ') : 'None'}
+Additional Info (manually provided): ${manualInfo || 'None'}
 
 Recent Activity:
 - Last post: ${recentActivity.lastPostDaysAgo ? `${recentActivity.lastPostDaysAgo} days ago` : 'Unknown'}
@@ -123,6 +115,15 @@ ${categoriesContext}
 
 ${profileSummary}
 
+${photoDescription ? `
+=== PROFILE PHOTO ANALYSIS (from AI vision model) ===
+The user's profile photo was analyzed by an AI vision model. Here is the detailed description:
+
+${photoDescription}
+
+IMPORTANT: The user HAS a profile photo. Use the description above to evaluate the "photo-banner" category. Score the photo subcriteria (presence=full marks, quality, framing, expression) based on this description. Do NOT say the profile has no photo.
+=== END PHOTO ANALYSIS ===
+` : ''}
 Analyze the profile following these rules:
 1. Score each category 0-100 based on how well the profile meets the criteria
 2. The final score is the weighted average of all categories
@@ -153,7 +154,8 @@ Grade thresholds:
 Important:
 - Scores must be realistic and based on actual content quality
 - Feedback should be constructive and specific
-- Recommendations should address the biggest gaps with highest impact`;
+- Recommendations should address the biggest gaps with highest impact
+- For the "photo-banner" category: evaluate ONLY the profile photo. Do NOT evaluate the banner. If a "Profile Photo AI Description" is provided above, use that description to score the photo subcriteria (quality, framing, expression, professionalism). Ignore all banner-related subcriteria (banner presence, relevance, quality, branding) — assign them 0 points and do not penalize or reward for banner.`;
 }
 
 function parseLLMResponse(content: string): LLMAnalysisResponse | null {
@@ -191,8 +193,8 @@ function parseLLMResponse(content: string): LLMAnalysisResponse | null {
   }
 }
 
-export async function analyzeProfile(profileData: ProfileData): Promise<AnalysisResult> {
-  const prompt = buildAnalysisPrompt(profileData);
+export async function analyzeProfile(profileData: ProfileData, manualInfo?: string, photoDescription?: string): Promise<AnalysisResult> {
+  const prompt = buildAnalysisPrompt(profileData, manualInfo, photoDescription);
 
   const callLLM = async () => {
     const completion = await openai.chat.completions.create({
